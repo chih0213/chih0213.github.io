@@ -1,0 +1,356 @@
+<!doctype html>
+<html lang="zh-Hant">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Chih | Security Blog</title>
+    <meta
+      name="description"
+      content="Chih的資安個人blog，比賽經歷、CTF write-up 和資安筆記都在這裡!"
+    />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;600;700&family=Plus+Jakarta+Sans:ital,wght@0,400;0,500;0,600;0,700;1,400&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <canvas id="signal-canvas" aria-hidden="true"></canvas>
+    <p class="weather-status" id="weather-status" aria-live="polite">Taipei · loading weather</p>
+
+    <header class="site-header">
+      <div class="header-start">
+        <a class="home-logo" href="#" aria-label="Chih 首頁">Chih</a>
+
+        <nav class="social-nav" aria-label="社群連結">
+          <a
+            class="social-link"
+            href="https://discord.com/users/970913052386013194"
+            target="_blank"
+            rel="noreferrer noopener"
+            aria-label="Discord"
+          >
+            <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+              <path
+                fill="currentColor"
+                d="M20.317 4.369A19.791 19.791 0 0 0 16.885 3c-.2.363-.433.85-.595 1.23a18.27 18.27 0 0 0-4.58 0A12.64 12.64 0 0 0 11.115 3a19.736 19.736 0 0 0-3.432 1.369C4.462 8.075 3.68 11.65 4.003 15.17a19.9 19.9 0 0 0 3.805 1.928 14.05 14.05 0 0 0 1.214-1.978 12.8 12.8 0 0 1-1.923-.883c.16-.118.318-.242.47-.372a13.48 13.48 0 0 0 8.862 0c.152.13.31.254.47.372-.66.33-1.252.62-1.923.883a14.05 14.05 0 0 0 1.214 1.978 19.86 19.86 0 0 0 3.805-1.928c.414-4.096-.698-7.66-3.45-10.801ZM9.32 13.116c-.956 0-1.74-.88-1.74-1.962 0-1.083.766-1.971 1.74-1.971.983 0 1.768.896 1.74 1.971 0 1.082-.757 1.962-1.74 1.962Zm5.36 0c-.956 0-1.74-.88-1.74-1.962 0-1.083.766-1.971 1.74-1.971.983 0 1.776.896 1.74 1.971 0 1.082-.757 1.962-1.74 1.962Z"
+              />
+            </svg>
+          </a>
+          <a
+            class="social-link"
+            href="https://www.instagram.com/chih.0213/"
+            target="_blank"
+            rel="noreferrer noopener"
+            aria-label="Instagram"
+          >
+            <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+              <path
+                fill="currentColor"
+                d="M7.8 2h8.4A5.8 5.8 0 0 1 22 7.8v8.4A5.8 5.8 0 0 1 16.2 22H7.8A5.8 5.8 0 0 1 2 16.2V7.8A5.8 5.8 0 0 1 7.8 2Zm0 1.8A4 4 0 0 0 3.8 7.8v8.4A4 4 0 0 0 7.8 20.2h8.4a4 4 0 0 0 4-4V7.8a4 4 0 0 0-4-4H7.8Zm4.2 3.4a5.8 5.8 0 1 1 0 11.6 5.8 5.8 0 0 1 0-11.6Zm0 1.8a4 4 0 1 0 0 8 4 4 0 0 0 0-8Zm5.9-2.3a1.1 1.1 0 1 1-2.2 0 1.1 1.1 0 0 1 2.2 0Z"
+              />
+            </svg>
+          </a>
+          <a
+            class="social-link"
+            href="https://github.com/chih0213"
+            target="_blank"
+            rel="noreferrer noopener"
+            aria-label="GitHub"
+          >
+            <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+              <path
+                fill="currentColor"
+                d="M12 2a10 10 0 0 0-3.162 19.487c.5.092.683-.217.683-.483 0-.237-.009-.866-.014-1.7-2.782.604-3.369-1.341-3.369-1.341-.454-1.155-1.11-1.463-1.11-1.463-.908-.62.069-.608.069-.608 1.003.07 1.531 1.03 1.531 1.03.892 1.529 2.341 1.087 2.91.831.092-.646.35-1.086.636-1.336-2.22-.253-4.555-1.11-4.555-4.943 0-1.091.39-1.984 1.029-2.683-.103-.253-.446-1.272.098-2.65 0 0 .84-.269 2.75 1.025A9.564 9.564 0 0 1 12 6.844c.85.004 1.705.115 2.504.337 1.909-1.294 2.747-1.025 2.747-1.025.546 1.378.202 2.397.1 2.65.64.699 1.028 1.592 1.028 2.683 0 3.842-2.339 4.687-4.566 4.935.359.309.678.919.678 1.852 0 1.336-.012 2.415-.012 2.743 0 .268.18.58.688.482A10.001 10.001 0 0 0 12 2Z"
+              />
+            </svg>
+          </a>
+        </nav>
+      </div>
+
+      <nav class="main-nav" aria-label="主要導覽">
+        <a href="#about">About</a>
+        <a href="#timeline">時間線</a>
+        <a href="#writeups">Write-up</a>
+        <a href="#notes">筆記</a>
+        <a href="#life">Life</a>
+      </nav>
+    </header>
+
+    <main>
+      <section class="intro-band" aria-labelledby="page-title">
+        <div class="intro-copy">
+          <p class="eyebrow">CTF write-up / Security notes / Competition log</p>
+          <h1 id="page-title">Chih's blog</h1>
+          <p class="intro-text">
+            這裡記錄我的資安學習、CTF 解題和一些資安筆記。
+          </p>
+          <div class="security-chips" aria-label="資安主題標籤">
+            <span>web exploitation</span>
+            <span>CTF write-up</span>
+            <span>payload notes</span>
+            <span>Linux lab</span>
+          </div>
+          <div class="intro-actions" aria-label="快速連結">
+            <a class="primary-action" href="#about">認識我</a>
+            <a class="secondary-action" href="#timeline">查看我的經歷</a>
+          </div>
+        </div>
+
+        <div class="hero-aside" aria-label="個人摘要">
+          <div class="ops-topline">
+            <span>chih@ctf-lab</span>
+            <time datetime="2026-06-25">live</time>
+          </div>
+          <div class="terminal-window" role="img" aria-label="資安終端機摘要">
+            <div class="window-controls">
+              <span></span>
+              <span></span>
+              <span></span>
+            </div>
+            <pre><code>$ ./profile --scan
+[role] ctf_player / security_learner
+[focus] reverse / web / osint
+[status] student
+[motto] keep running
+[log] documenting_my_ctf_journey</code></pre>
+          </div>
+          <div class="metric-strip">
+            <span><strong>05</strong> contests</span>
+            <span><strong>03</strong> write-ups</span>
+            <span><strong>04</strong> notes</span>
+          </div>
+        </div>
+      </section>
+
+      <section class="ticker" aria-label="站內摘要" id="briefs">
+        <span>About</span>
+        <p>個人介紹資安學習筆記、Write-up</p>
+        <span>Timeline</span>
+        <p>經歷整理成時間線</p>
+      </section>
+
+      <section class="about-section" id="about" aria-labelledby="about-title">
+        <div class="about-copy">
+          <p class="eyebrow">About me</p>
+          <h2 id="about-title">關於Chih!</h2>
+          <p>
+            嗨!我是一名正在學習資安的學生，也是一個喜歡打 CTF 的人。
+          </p>
+          <p>
+            從高一開始接觸資安，偶然看到學校有在比網路安全，準備選手徵選的過程中也越來越感興趣，就這樣慢慢愛上了資安。
+          </p>
+          <p>
+            目前什麼都會碰一點，看到有興趣的就去學一下。
+          </p>
+          <p>
+            這個 Blog 就拿來記錄我的Write-up、筆記，和一些生活日常ㄅ。
+          </p>
+        </div>
+
+        <div class="profile-card" aria-label="個人技能摘要">
+          <div class="profile-badge">SECURITY PROFILE</div>
+          <dl>
+            <div>
+              <dt>SCHOOL</dt>
+              <dd>SAIHS IT</dd>
+            </div>
+            <div>
+              <dt>FOCUS</dt>
+              <dd>Web / Reverse / OSINT / Linux</dd>
+            </div>
+            <div>
+              <dt>Archive</dt>
+              <dd>Writeup / Notes / Lives</dd>
+            </div>
+            <div>
+              <dt>LUCKY NUMBER</dt>
+              <dd>67 six-seven!!!</dd>
+            </div>
+          </dl>
+        </div>
+      </section>
+
+      <section class="timeline-section" id="timeline" aria-labelledby="timeline-title">
+        <div class="section-heading">
+          <div>
+            <p class="eyebrow">Competition log</p>
+            <h2 id="timeline-title">經歷時間線</h2>
+          </div>
+          <p class="section-note"></p>
+        </div>
+
+        <div class="timeline">
+          <article class="timeline-item">
+            <div class="timeline-date">
+              <span>2026</span>
+              <strong>04 月</strong>
+            </div>
+            <div class="timeline-card">
+              <span class="resource-type">Individual</span>
+              <h3>TSCCTF</h3>
+              <p>2026 年 4 月參賽，個人賽紀錄。</p>
+              <dl class="timeline-meta">
+                <div><dt>Rank</dt><dd>th61</dd></div>
+                <div><dt>Mode</dt><dd>個人賽</dd></div>
+              </dl>
+            </div>
+          </article>
+
+          <article class="timeline-item">
+            <div class="timeline-date">
+              <span>2026</span>
+              <strong>03 月</strong>
+            </div>
+            <div class="timeline-card">
+              <span class="resource-type">Team</span>
+              <h3>picoCTF</h3>
+              <p>2026 年 3 月參賽，團體賽紀錄。</p>
+              <dl class="timeline-meta">
+                <div><dt>Rank</dt><dd>th1534</dd></div>
+                <div><dt>Mode</dt><dd>團體賽</dd></div>
+              </dl>
+            </div>
+          </article>
+
+          <article class="timeline-item">
+            <div class="timeline-date">
+              <span>2026</span>
+              <strong>02 月</strong>
+            </div>
+            <div class="timeline-card">
+              <span class="resource-type">Individual</span>
+              <h3>THJCC</h3>
+              <p>2026 年 2 月參賽，個人賽紀錄。</p>
+              <dl class="timeline-meta">
+                <div><dt>Rank</dt><dd>th35</dd></div>
+                <div><dt>Mode</dt><dd>個人賽</dd></div>
+              </dl>
+            </div>
+          </article>
+
+          <article class="timeline-item">
+            <div class="timeline-date">
+              <span>2026</span>
+              <strong>01 月</strong>
+            </div>
+            <div class="timeline-card">
+              <span class="resource-type">Individual</span>
+              <h3>Fhctf</h3>
+              <p>2026 年 1 月參賽，個人賽紀錄。</p>
+              <dl class="timeline-meta">
+                <div><dt>Rank</dt><dd>th 忘記</dd></div>
+                <div><dt>Mode</dt><dd>個人賽</dd></div>
+              </dl>
+            </div>
+          </article>
+
+          <article class="timeline-item">
+            <div class="timeline-date">
+              <span>2025</span>
+              <strong>12 月</strong>
+            </div>
+            <div class="timeline-card">
+              <span class="resource-type">Team</span>
+              <h3>ASIS CTF</h3>
+              <p>2025 年 12 月參賽，團體賽紀錄。</p>
+              <dl class="timeline-meta">
+                <div><dt>Rank</dt><dd>th254</dd></div>
+                <div><dt>Mode</dt><dd>團體賽</dd></div>
+              </dl>
+            </div>
+          </article>
+        </div>
+      </section>
+
+      <section class="resource-section" id="writeups" aria-labelledby="writeups-title">
+        <div class="section-heading">
+          <div>
+            <p class="eyebrow">Case files</p>
+            <h2 id="writeups-title">Write-up</h2>
+          </div>
+          <p class="section-note"></p>
+        </div>
+
+        <div class="resource-grid writeup-grid">
+          <a class="resource-card writeup-card" href="https://hackmd.io/DnyyIAEIT_S4kVpz-pwLFA" target="_blank" rel="noreferrer">
+            <span class="resource-type">Write-up 01</span>
+            <h3>Injector Write-up</h3>
+            <p>完整題解與解題脈絡，包含觀察、嘗試與最後利用方式。</p>
+          </a>
+          <a class="resource-card writeup-card" href="https://hackmd.io/1_i0ZHZwRO-ylRKUyN4Upw" target="_blank" rel="noreferrer">
+            <span class="resource-type">Write-up 02</span>
+            <h3>TSCCTF Write-up</h3>
+            <p>聚焦漏洞利用、關鍵線索整理與實作過程，適合複盤。</p>
+          </a>
+          <a class="resource-card writeup-card" href="https://hackmd.io/l82gBI13QOiFb7PqCY1rEw" target="_blank" rel="noreferrer">
+            <span class="resource-type">Write-up 03</span>
+            <h3>picoCTF Write-up 03</h3>
+            <p>記錄解題策略、工具選擇與可重現的攻擊步驟。</p>
+          </a>
+        </div>
+      </section>
+
+      <section class="resource-section" id="notes" aria-labelledby="notes-title">
+        <div class="section-heading">
+          <div>
+            <p class="eyebrow">Knowledge base</p>
+            <h2 id="notes-title">筆記</h2>
+          </div>
+          <p class="section-note"></p>
+        </div>
+
+        <div class="resource-grid">
+          <a class="resource-card" href="https://hackmd.io/ayuPNMmoRN-j8eyd5dJYVQ" target="_blank" rel="noreferrer">
+            <span class="resource-type">Note 01</span>
+            <h3>REVERSE</h3>
+            <p>HackMD 筆記文件，適合放學習紀錄、環境設定與觀念整理。</p>
+          </a>
+          <a class="resource-card" href="https://hackmd.io/oPXVspNdR--fxr4BK3U9Hg" target="_blank" rel="noreferrer">
+            <span class="resource-type">Note 02</span>
+            <h3>WEB</h3>
+            <p>補充實作流程、工具操作與排錯紀錄，方便之後回查。</p>
+          </a>
+          <a class="resource-card" href="https://hackmd.io/sYz3V2lAROyzExj248yh7w" target="_blank" rel="noreferrer">
+            <span class="resource-type">Note 03</span>
+            <h3>Memory Forensics</h3>
+            <p>將觀察到的攻擊手法、指令片段與防禦思路集中整理。</p>
+          </a>
+          <a class="resource-card" href="https://hackmd.io/m_3JRdxXRHeL_BP94LHt1A" target="_blank" rel="noreferrer">
+            <span class="resource-type">Note 04</span>
+            <h3>PWN</h3>
+            <p>延伸紀錄與實驗內容，可作為後續文章素材庫。</p>
+          </a>
+        </div>
+      </section>
+
+      <section class="resource-section" id="life" aria-labelledby="life-title">
+        <div class="section-heading">
+          <div>
+            <p class="eyebrow">Daily log</p>
+            <h2 id="life-title">Life</h2>
+          </div>
+          <p class="section-note"></p>
+        </div>
+
+        <div class="life-feed">
+        </div>
+      </section>
+    </main>
+
+    <footer class="site-footer">
+      <div class="footer-brand">
+        <span>Chih</span>
+      </div>
+      <p class="footer-tagline">記錄資安學習、CTF 解題與深夜 debug 的筆記站。</p>
+      <p class="footer-uptime" id="blog-uptime" aria-live="polite">
+        Blog 已運行
+        <span class="uptime-value" id="uptime-value">—</span>
+      </p>
+     <div class="mt-20 text-text-mute/40 text-sm font-light">© 2026 Chih <br>
+    </footer>
+    <script src="script.js"></script>
+  </body>
+</html>
