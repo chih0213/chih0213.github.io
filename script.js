@@ -253,11 +253,12 @@ window.setInterval(() => setWeather(weather, "local"), 60 * 1000);
 window.addEventListener("resize", resizeCanvas);
 window.addEventListener("pointerdown", (event) => spawnClickParticles(event.clientX, event.clientY));
 
-// Client-side content console. Entries are saved in this browser via localStorage.
+// Shared content console. Browser storage is kept only as a local backup.
 (() => {
   const STORAGE_KEY = "chih-security-blog-content-v1";
-  // SHA-256 of the current admin password. Change this value before publishing.
-  const ADMIN_PASSWORD_HASH = "41e5094374ab5e77bef0d5ddf514d33eee0342b4f9395744f9604dd7da8fe0bc";
+  const SUPABASE_URL = "https://xpbbxlbzbwkpgfoytqsb.supabase.co";
+  const SUPABASE_PUBLISHABLE_KEY = "sb_publishable_FdvLOK2xp4Y-pqBWra5hkg_cuEErJAR";
+  const supabaseClient = window.supabase?.createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY);
   const isAdminRoute = window.location.pathname.replace(/\/+$/, "") === "/admin" || new URLSearchParams(window.location.search).get("admin") === "1";
   const timelineRoot = document.querySelector("#timeline .timeline");
   const notesRoot = document.querySelector("#notes .resource-grid");
@@ -320,20 +321,54 @@ window.addEventListener("pointerdown", (event) => spawnClickParticles(event.clie
 
   const initialData = getInitialData();
   const cloneInitialData = () => JSON.parse(JSON.stringify(initialData));
-  const load = () => {
+  const normalizeData = (stored) => {
+    const merged = { ...cloneInitialData(), ...(stored || {}) };
+    merged.life = Array.isArray(stored?.life) ? stored.life.map(normalizeLifeEntry) : [];
+    return merged;
+  };
+  const loadLocal = () => {
     try {
       const stored = JSON.parse(localStorage.getItem(STORAGE_KEY));
       if (!stored) return cloneInitialData();
-      const merged = { ...cloneInitialData(), ...stored };
-      merged.life = Array.isArray(stored.life) ? stored.life.map(normalizeLifeEntry) : [];
-      return merged;
+      return normalizeData(stored);
     } catch {
       return cloneInitialData();
     }
   };
-  let data = load();
+  const isContentEmpty = (content) => ["timeline", "notes", "writeups", "life"]
+    .every((key) => !Array.isArray(content?.[key]) || content[key].length === 0);
+  let data = loadLocal();
   let isDirty = false;
-  const save = () => localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+  const saveLocal = () => localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+
+  async function loadCloudData() {
+    if (!supabaseClient) return;
+    const { data: row, error } = await supabaseClient
+      .from("site_content")
+      .select("data")
+      .eq("id", "main")
+      .single();
+    if (error) {
+      console.warn("Could not load shared content:", error.message);
+      return;
+    }
+    // A newly created cloud row is empty. Keep the existing local/default
+    // content until the admin saves it once, so migration cannot erase it.
+    if (row?.data && !(isContentEmpty(row.data) && !isContentEmpty(data))) {
+      data = normalizeData(row.data);
+      render();
+      if (!consoleEl.hidden && !isDirty) drawEditor();
+    }
+  }
+
+  async function saveCloudData() {
+    if (!supabaseClient) throw new Error("Supabase is unavailable.");
+    const { error } = await supabaseClient
+      .from("site_content")
+      .update({ data, updated_at: new Date().toISOString() })
+      .eq("id", "main");
+    if (error) throw error;
+  }
   const markDirty = () => {
     isDirty = true;
     updateSaveButton();
@@ -538,9 +573,10 @@ window.addEventListener("pointerdown", (event) => spawnClickParticles(event.clie
     saveButton.textContent = isDirty ? "儲存 *" : "已儲存";
   }
 
-  function persistChanges() {
+  async function persistChanges() {
     try {
-      save();
+      await saveCloudData();
+      saveLocal();
       render();
       markClean();
     } catch (error) {
@@ -548,7 +584,7 @@ window.addEventListener("pointerdown", (event) => spawnClickParticles(event.clie
         window.alert("Image is too large for this browser storage. Use a smaller image or a URL.");
         return;
       }
-      throw error;
+      window.alert(`Could not save shared content: ${error.message || "Unknown error"}`);
     }
   }
 
@@ -570,19 +606,25 @@ window.addEventListener("pointerdown", (event) => spawnClickParticles(event.clie
     }).join("") : `<div class="admin-empty">尚無${labels[activeKind]}，按「新增項目」開始建立。</div>`;
   }
 
-  async function hashPassword(password) {
-    const bytes = new TextEncoder().encode(password);
-    const digest = await crypto.subtle.digest("SHA-256", bytes);
-    return [...new Uint8Array(digest)].map((byte) => byte.toString(16).padStart(2, "0")).join("");
-  }
-
   async function openConsole() {
-    const password = window.prompt("ADMIN password");
-    if (password === null) return;
-    if ((await hashPassword(password)) !== ADMIN_PASSWORD_HASH) {
-      window.alert("Password incorrect.");
+    if (!supabaseClient) {
+      window.alert("Shared admin is unavailable. Check the Supabase configuration.");
       return;
     }
+    let { data: { session } } = await supabaseClient.auth.getSession();
+    if (!session) {
+      const email = window.prompt("ADMIN email");
+      if (!email) return;
+      const password = window.prompt("ADMIN password");
+      if (!password) return;
+      const { data, error } = await supabaseClient.auth.signInWithPassword({ email, password });
+      if (error || !data.session) {
+        window.alert(error?.message || "Could not sign in.");
+        return;
+      }
+      session = data.session;
+    }
+    await loadCloudData();
     consoleEl.hidden = false;
     document.body.classList.add("admin-open");
     updateSaveButton();
@@ -596,15 +638,12 @@ window.addEventListener("pointerdown", (event) => spawnClickParticles(event.clie
       closeConsole();
     }
     if (event.target.matches("[data-tab]")) { activeKind = event.target.dataset.tab; drawEditor(); }
-    if (event.target.matches("[data-save]")) persistChanges();
+    if (event.target.matches("[data-save]")) void persistChanges();
     if (event.target.matches("[data-add]")) { data[activeKind].unshift(emptyEntry(activeKind)); markDirty(); drawEditor(); }
     if (event.target.matches("[data-reset]") && confirm("確定還原所有預設內容？")) {
       localStorage.removeItem(STORAGE_KEY);
       data = cloneInitialData();
-      save();
-      render();
-      markClean();
-      drawEditor();
+      void persistChanges().then(drawEditor);
     }
     if (event.target.matches("[data-delete]") && confirm("確定刪除此項目？")) {
       const id = event.target.closest(".admin-entry").dataset.id;
@@ -664,5 +703,23 @@ window.addEventListener("pointerdown", (event) => spawnClickParticles(event.clie
     }
   });
   render();
+  void loadCloudData();
+  if (supabaseClient) {
+    supabaseClient
+      .channel("site-content-sync")
+      .on("postgres_changes", {
+        event: "UPDATE",
+        schema: "public",
+        table: "site_content",
+        filter: "id=eq.main",
+      }, (payload) => {
+        if (isDirty || !payload.new?.data) return;
+        data = normalizeData(payload.new.data);
+        saveLocal();
+        render();
+        if (!consoleEl.hidden) drawEditor();
+      })
+      .subscribe();
+  }
   if (isAdminRoute) openConsole();
 })();
