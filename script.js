@@ -1,8 +1,5 @@
-// Blog 上線日期：今天 00:00（本地時間）
-const BLOG_START = (() => {
-  const now = new Date();
-  return new Date(now.getFullYear(), now.getMonth(), now.getDate());
-})();
+// Blog 上線日期：固定寫死
+const BLOG_START = new Date("2026-06-25T00:00:00+08:00");
 
 function pad2(n) {
   return String(n).padStart(2, "0");
